@@ -129,8 +129,7 @@ ws_table.cell(row=next_row, column = 9, value = site)
 
 wb_table.save(newPart_table)
 wb_table.close()
-    
-    
+
 #Print Vendor Name & Item Description
 print(f"Item Description: {item_description}")
 print(f"TPP Price: {tpp.value}")
