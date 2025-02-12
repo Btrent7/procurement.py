@@ -1,8 +1,15 @@
+#699_ New Part Number Script
 from openpyxl import load_workbook
 
+import base64
+from email.mime.text import MIMEText
+from google_auth_oauthlib.flow import InstalledAppFlow
+from googleapiclient.discovery import build
+from requests import HTTPError 
+
 # Excel File Path
-newPart_form = "C:/Users/Btrent/Documents/Python/NewPartNumber/NewPartNumber_Form.xlsx"
-newPart_table = "C:/Users/Btrent/Documents/Python/NewPartNumber/NewPartNumber_Table.xlsx"
+newPart_form = "C:/Users/btrent/OneDrive/New Part Number/NewPartNumber/NewPartNumber_Form.xlsx"
+newPart_table = "C:/Users/btrent/OneDrive/New Part Number/NewPartNumber_Table.xlsx"
 
 #Load Excel File (newPart_form)
 wb_form = load_workbook(newPart_form)
@@ -17,7 +24,7 @@ detail = ws_form["B5"].value
 tpp = ws_form["B10"]
 cat_code = ws_form["B11"].value
 site = ws_form["B12"].value
-item_description = (f"{vnd_name}, #{sku}, {detail}")
+item_description = (f"{vnd_name},#{sku},{detail}")
 
 #List Price Categories
 if cat_code in ["501A", "501B", "501C"]:
@@ -130,6 +137,30 @@ ws_table.cell(row=next_row, column = 9, value = site)
 wb_table.save(newPart_table)
 wb_table.close()
 
+SCOPES = [ "https://www.googleapis.com/auth/gmail.send"]
+flow = InstalledAppFlow.from_client_secrets_file(r'C:/Users/btrent/OneDrive/New Part Number/NewPartNumber/creds.json', SCOPES)
+creds = flow.run_local_server(port=0)
+service = build('gmail', 'v1', credentials=creds)
+message = MIMEText(f"""
+New part: {item_description} 
+TPP: {tpp.value}
+List: {list_Price} 
+Cat Code: {cat_code}
+
+Thanks,
+
+py
+""")
+message['to'] = 'email@reliablesprinkler.com'
+message['subject'] = '@rs.noreply'
+create_message =  {'raw': base64.urlsafe_b64encode(message.as_bytes()).decode()}
+try:
+    message = (service.users().messages().send(userId="me", body=create_message).execute())
+    print(F'Email sent!')
+except HTTPError as error:
+    print(F'An error occured {error}')
+    message = None    
+    
 #Print Vendor Name & Item Description
 print(f"Item Description: {item_description}")
 print(f"TPP Price: {tpp.value}")
