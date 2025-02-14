@@ -8,8 +8,8 @@ from googleapiclient.discovery import build
 from requests import HTTPError 
 
 # Excel File Path
-newPart_form = "C:/Users/btrent/OneDrive/New Part Number/NewPartNumber/NewPartNumber_Form.xlsx"
-newPart_table = "C:/Users/btrent/OneDrive/New Part Number/NewPartNumber_Table.xlsx"
+newPart_form = "C:/Users/btrent//New Part Number/NewPartNumber/NewPartNumber_Form.xlsx"
+newPart_table = "C:/Users/btrent//New Part Number/NewPartNumber_Table.xlsx"
 
 #Load Excel File (newPart_form)
 wb_form = load_workbook(newPart_form)
@@ -124,9 +124,8 @@ next_row = 1
 while ws_table.cell(row=next_row, column=2).value is not None:
     next_row += 1
 
-
 ws_table.cell(row=next_row, column = 2, value = item_description)
-ws_table.cell(row=next_row, column = 3, value=vnd_name)
+ws_table.cell(row=next_row, column = 3, value = vnd_name)
 ws_table.cell(row=next_row, column = 4, value = sku)
 # ws_table.cell(row=next_row, column = 5, value = [DATE]
 ws_table.cell(row=next_row, column = 6, value = cat_code)
@@ -137,32 +136,65 @@ ws_table.cell(row=next_row, column = 9, value = site)
 wb_table.save(newPart_table)
 wb_table.close()
 
-SCOPES = [ "https://www.googleapis.com/auth/gmail.send"]
-flow = InstalledAppFlow.from_client_secrets_file(r'C:/Users/btrent/OneDrive/New Part Number/NewPartNumber/creds.json', SCOPES)
-creds = flow.run_local_server(port=0)
-service = build('gmail', 'v1', credentials=creds)
-message = MIMEText(f"""
-New part: {item_description} 
-TPP: {tpp.value}
-List: {list_Price} 
-Cat Code: {cat_code}
+
+#Read NewPart_Table for Email
+import pandas as pd
+
+# Read the data from the Excel file
+wb_table_pd = pd.read_excel('C:/Users/btrent//New Part Number/NewPartNumber_Table.xlsx',
+    dtype={"New Part Number": str})  # 'New Part Number' to be read as string
+
+# Filter out rows where 'Item Description' is NaN or empty
+wb_table_pd = wb_table_pd[wb_table_pd["Item Description"].notna() & (wb_table_pd["Item Description"].str.strip() != '')]
+
+# Get the last non-empty 'Item Description' and the corresponding 'Part Number'
+last_non_empty_row = wb_table_pd.iloc[-1]
+
+# Variables for Email
+part_number = last_non_empty_row['New Part Number']
+new_item_description = last_non_empty_row['Item Description']
+
+email_body = f"""
+New PN: {part_number}
+PN: Desc: {new_item_description}
 
 Thanks,
 
-py
-""")
-message['to'] = 'email@reliablesprinkler.com'
+.py"""
+
+SCOPES = [ "https://www.googleapis.com/auth/gmail.send"]
+flow = InstalledAppFlow.from_client_secrets_file(r'C:/Users/creds.json', SCOPES)
+creds = flow.run_local_server(port=0)
+service = build('gmail', 'v1', credentials=creds)
+
+message = MIMEText(email_body)
+message['to'] = 'buyer@reliablesprinkler.com'
 message['subject'] = '@rs.noreply'
+
 create_message =  {'raw': base64.urlsafe_b64encode(message.as_bytes()).decode()}
+
 try:
-    message = (service.users().messages().send(userId="me", body=create_message).execute())
-    print(F'Email sent!')
+    result = (service.users().messages().send(userId="me", body=create_message).execute())
+    print(f'sent message!')
 except HTTPError as error:
-    print(F'An error occured {error}')
-    message = None    
+    print(f'An error occured {error}')
+    result = None    
     
 #Print Vendor Name & Item Description
-print(f"Item Description: {item_description}")
+print(f"New PN: {part_number}")
+print(f"Item Description: {new_item_description}")
 print(f"TPP Price: {tpp.value}")
 print(f"List Price: {list_Price}")
 print(f"Site: {site}")
+
+# ==================== TEST TABLE ==========================
+
+import pandas as pd
+
+# Read the data from the Excel file
+wb_table_pd = pd.read_excel('C:/Users/btrent//New Part Number/NewPartNumber_Table.xlsx',
+    dtype={"New Part Number": str})  # Force 'New Part Number' to be read as string
+
+print(wb_table_pd)
+
+#THE END
