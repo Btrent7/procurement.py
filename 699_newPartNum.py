@@ -1,11 +1,12 @@
 #699_ New Part Number Script
 from openpyxl import load_workbook
-
+from datetime import date 
 import base64
 from email.mime.text import MIMEText
 from google_auth_oauthlib.flow import InstalledAppFlow
 from googleapiclient.discovery import build
 from requests import HTTPError 
+import pandas as pd
 
 # Excel File Path
 newPart_form = "C:/Users/btrent//New Part Number/NewPartNumber/NewPartNumber_Form.xlsx"
@@ -19,12 +20,14 @@ ws_form = wb_form["699_NP#"]
 
 #newPart_Form Variables
 vnd_name = ws_form["B2"].value
+vnd_id = ws_form["B3"].value
 sku = ws_form["B4"].value
 detail = ws_form["B5"].value
 tpp = ws_form["B10"]
 cat_code = ws_form["B11"].value
 site = ws_form["B12"].value
 item_description = (f"{vnd_name},#{sku},{detail}")
+request = ws_form["B13"].value
 
 #List Price Categories
 if cat_code in ["501A", "501B", "501C"]:
@@ -124,21 +127,17 @@ next_row = 1
 while ws_table.cell(row=next_row, column=2).value is not None:
     next_row += 1
 
-ws_table.cell(row=next_row, column = 2, value = item_description)
-ws_table.cell(row=next_row, column = 3, value = vnd_name)
-ws_table.cell(row=next_row, column = 4, value = sku)
-# ws_table.cell(row=next_row, column = 5, value = [DATE]
+ws_table.cell(row=next_row, column = 2, value = str(item_description.upper()))
+# ws_table.cell(row=next_row, column = 11, value = vnd_name)
+# ws_table.cell(row=next_row, column = 13, value = sku)
+ws_table.cell(row=next_row, column = 3, value = date.today())
 ws_table.cell(row=next_row, column = 6, value = cat_code)
-ws_table.cell(row=next_row, column = 7, value = tpp.value)
-ws_table.cell(row=next_row, column = 8, value = list_Price)
-ws_table.cell(row=next_row, column = 9, value = site)
+ws_table.cell(row=next_row, column = 5, value = tpp.value)
+ws_table.cell(row=next_row, column = 10, value = list_Price)
+ws_table.cell(row=next_row, column = 4, value = str(site.upper()))
 
 wb_table.save(newPart_table)
 wb_table.close()
-
-
-#Read NewPart_Table for Email
-import pandas as pd
 
 # Read the data from the Excel file
 wb_table_pd = pd.read_excel('C:/Users/btrent//New Part Number/NewPartNumber_Table.xlsx',
@@ -156,20 +155,28 @@ new_item_description = last_non_empty_row['Item Description']
 
 email_body = f"""
 New PN: {part_number}
-PN: Desc: {new_item_description}
+Desc: {new_item_description}
+
+Request: {request}
+
+Vnd Name: {vnd_name}
+Vnd ID: {vnd_id}
+SKU: {sku} 
+Detail: {detail} 
+TPP: ${tpp.value} 
+Site: {site}
 
 Thanks,
-
 .py"""
 
 SCOPES = [ "https://www.googleapis.com/auth/gmail.send"]
-flow = InstalledAppFlow.from_client_secrets_file(r'C:/Users/creds.json', SCOPES)
+flow = InstalledAppFlow.from_client_secrets_file(r'C:/Users/btrent//New Part Number/NewPartNumber/creds.json', SCOPES)
 creds = flow.run_local_server(port=0)
 service = build('gmail', 'v1', credentials=creds)
 
 message = MIMEText(email_body)
-message['to'] = 'buyer@reliablesprinkler.com'
-message['subject'] = '@rs.noreply'
+message['to'] = 'btrent@reliablesprinkler.com'
+message['subject'] = '@reliablesprinkler.noreply'
 
 create_message =  {'raw': base64.urlsafe_b64encode(message.as_bytes()).decode()}
 
@@ -182,19 +189,9 @@ except HTTPError as error:
     
 #Print Vendor Name & Item Description
 print(f"New PN: {part_number}")
-print(f"Item Description: {new_item_description}")
+print(f"Item Description: " + str(new_item_description.upper()))
 print(f"TPP Price: {tpp.value}")
 print(f"List Price: {list_Price}")
-print(f"Site: {site}")
+print(f"Site: " + str(site.upper()))
 
-# ==================== TEST TABLE ==========================
-
-import pandas as pd
-
-# Read the data from the Excel file
-wb_table_pd = pd.read_excel('C:/Users/btrent//New Part Number/NewPartNumber_Table.xlsx',
-    dtype={"New Part Number": str})  # Force 'New Part Number' to be read as string
-
-print(wb_table_pd)
-
-#THE END
+# THE END
