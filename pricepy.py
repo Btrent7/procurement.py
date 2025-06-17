@@ -1,12 +1,18 @@
-#For newPart Markup Price
+# Dict for Price Updates
 markup_dict = {
-    "5A": 0.45, "5B": 0.75, "5C": 0.66, "6Q": 0.42
+    "2A": 0.600, "2B": 0.500, "2C": 0.700, "2F": 0.200, "2G"
 }
 
+
 def markup(category_code, tpp_value):
-    divisor = markup_dict.get(category_code)
-    if divisor:
-        return (1.2 * tpp_value) / divisor
-    else:
+    try:
+        divisor = markup_dict[category_code]
+        tpp_value = float(tpp_value)
+        list_price = (1.5 * tpp_value) / divisor
+        return list_price
+    except KeyError:
         print(f"Undefined Item Category: '{category_code}'")
+        return None
+    except (ValueError, TypeError):
+        print("Invalid TPP value.")
         return None
