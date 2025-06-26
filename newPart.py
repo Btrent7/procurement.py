@@ -1,4 +1,4 @@
-#New Part Number Script
+# New Part Number Script
 import pandas as pd
 import openpyxl as op
 from pricepy import markup #Unique Function for list_price value
@@ -15,12 +15,12 @@ newPart_form = "C:/Users//NewPartNumber_Form.xlsx"
 newPart_table = "C:/Users//NewPartNumber_Table.xlsx"
 
 
-#Load Form Workbook (openpyxl)
+# Load Form Workbook (openpyxl)
 wb_form = op.load_workbook(newPart_form)
 form = wb_form["newPart"]
 
 
-#Form Variables
+# Form Variables
 vnd_name    = form["B2"].value.upper()
 vnd_id      = form["B3"].value.upper()
 sku         = form["B4"].value.upper()
@@ -30,38 +30,38 @@ cat_code    = form["B11"].value
 site        = form["B12"].value.upper()
 request     = form["B13"].value
 
-#Date Variable
+# Date Variable
 today = date.today()
 
-#Item Description
+# Item Description
 item_descr = (f"{vnd_name},#{sku},{detail}")
 
-#List Price Function
+# List Price Function
 list_price = markup(category_code= cat_code, tpp_value= tpp)
 print(f"""Form accessed, markup applied: {today}""")
 
 
-#Load Table Workbook (openpyxl)
+# Load Table Workbook (openpyxl)
 wb_table = op.load_workbook(newPart_table)
 table = wb_table["699_Table"]
 
 
-#Select Next Blank Row in Table
+# Select Next Blank Row in Table
 last_row = 1
 while table.cell(row=last_row, column=1).value is not None:
     last_row += 1
 
 
-#Select Previous Row (for previous part number)
+# Select Previous Row (for previous part number)
 prev_pn_cell = table.cell(row= last_row - 1, column= 1).value
 previous_pn = int(prev_pn_cell)
 
 
-#Create New Part Number
+# Create New Part Number
 new_pn = previous_pn + 1
 
 
-#Fill Next Blank Row on Table
+# Fill Next Blank Row on Table
 next_row = last_row
 table.cell(row= next_row, column= 1, value = new_pn)
 table.cell(row= next_row, column= 2, value= sku)
@@ -76,7 +76,7 @@ wb_table.save(newPart_table)
 wb_table.close()
 
 
-#Email Message Variable
+# Email Message Variable
 email_body = f"""
 New PN: {new_pn}
 Desc: {item_descr}
@@ -94,20 +94,20 @@ Thanks,
 .py"""
 
 
-#Gmail API Variables
+# Gmail API Variables
 SCOPES = [ "https://www.googleapis.com/auth/gmail.send"]
 flow = InstalledAppFlow.from_client_secrets_file(r'C:/Users/btrent//creds.json', SCOPES)
 creds = flow.run_local_server(port=0)
 service = build('gmail', 'v1', credentials=creds)
 
 
-#Email Detail Variables
+# Email Detail Variables
 message = MIMEText(email_body)
 message['to'] = 'btrent@email.com'
 message['subject'] = '@noreply'
 
 
-#Send Email w/ New Part Number Information
+# Send Email w/ New Part Number Information
 create_message =  {'raw': base64.urlsafe_b64encode(message.as_bytes()).decode()}
 
 try:
