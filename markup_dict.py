@@ -2,7 +2,7 @@ import pandas as pd
 import openpyxl
 from datetime import date
 
-# Load Data Form
+# Load Part Number form
 source_file = "C:/user/partNumber.xlsx"
 df = pd.read_excel(source_file, sheet_name="pNum")
 
